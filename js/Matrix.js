@@ -1,5 +1,11 @@
 class Matrix {
 
+    /**
+     * Matrix constructor
+     * @param {Number} rows 
+     * @param {Number} cols 
+     * @param {Array} data 
+     */
     constructor (rows, cols, data = []) {
         this._rows = rows;
         this._cols = cols;
@@ -135,4 +141,3 @@ class Matrix {
     }
 
 }
-
