@@ -25,27 +25,61 @@ function drawNeuralNetwork() {
 
     let nn_d = new NeuralNetworkD(CANVAS_DIMENSIONS, NEURAL_NETWORK);
 
-    // console.log("------------DIMENSIONS------------\n\n");
+    // Limits of each layer
+    ctx.beginPath();
+    for (let i = 0; i <= CANVAS_DIMENSIONS.w; i += 256) {
+        ctx.strokeStyle = 'red';
+        ctx.setLineDash([6, 12]);
+        ctx.moveTo(i, 1);
+        ctx.lineTo(i, CANVAS_DIMENSIONS.h - 1);
+        ctx.stroke();
+    }
+    ctx.save();
 
-    // console.log("Full layer width: " + FULL_DIVISION_PER_LAYER);
-    // console.log("\nLayer width: " + LAYERD_DIMENTIONS.w);
-    // console.log("\nLayer offset x (one side): " + LAYERD_OFFSET.x);
+    // Representation of x offsets
+    ctx.beginPath();
+    for (let i = 0; i <= CANVAS_DIMENSIONS.w; i += 256) {
+        ctx.strokeStyle = 'blue';
+        ctx.setLineDash([6, 12]);
+        ctx.moveTo(i + 256 / 3 / 2, 1);
+        ctx.lineTo(i + 256 / 3 / 2, CANVAS_DIMENSIONS.h - 1);
+        ctx.stroke();
+    }
+    ctx.save();
 
-    // console.log("\nFull neuron width: " + LAYERD_DIMENTIONS.w);
-    // console.log("\nNeuron width: " + NEURON_DIMENTIONS.w);
-    // console.log("\nNeuron offset x (one side): " + NEUROND_OFFSET.x);
-    // console.log("\nNeuron radious: " + NEUROND_RAD);
+    ctx.beginPath();
+    for (let i = 0; i <= CANVAS_DIMENSIONS.w; i += 256) {
+        ctx.strokeStyle = 'blue';
+        ctx.setLineDash([6, 12]);
+        ctx.moveTo(i + 256 / 3 / 2 + 256 / 3 * 2, 1);
+        ctx.lineTo(i + 256 / 3 / 2 + 256 / 3 * 2, CANVAS_DIMENSIONS.h - 1);
+        ctx.stroke();
+    }
+    ctx.save();
+
+    // Middle line
+    ctx.beginPath();
+    for (let i = 0; i <= CANVAS_DIMENSIONS.w; i += 256) {
+        ctx.strokeStyle = 'cian';
+        ctx.setLineDash([6, 12]);
+        ctx.moveTo(0, CANVAS_DIMENSIONS.h / 2);
+        ctx.lineTo(CANVAS_DIMENSIONS.w, CANVAS_DIMENSIONS.h / 2);
+        ctx.stroke();
+    }
+    ctx.save();
+
 
     // Add neurons to layers    
     for (let i = 0; i < nn_d.numLayersD; i++) {
 
         let l;
+        
         if (i == 0) {
             l = new LayerD(nn_d.partSize);
 
         } else {
             const prev_l = nn_d.getLayerD(i - 1);
-            const x = prev_l.pos.x + nn_d.partSize.w + prev_l.offset.x;
+            const x = prev_l.pos.x + prev_l.fullSize.w;
             const y = prev_l.pos.y;
 
             l = new LayerD(nn_d.partSize, {
@@ -54,15 +88,31 @@ function drawNeuralNetwork() {
             });
         }
 
+        l.proportionality = {
+            x: l.proportionality.x,
+            y: nn_d.u_layers_d[i].length
+        };
+
+        console.log(l.partSize);
+
         for (let j = 0; j < nn_d.u_layers_d[i].length; j++) {
+
+
             let n;
+
             if (j == 0) {
+
                 n = new NeuronD(l.partialSize);
 
+                n.pos = {
+                    x: l.pos.x + n.pos.x,
+                    y: l.pos.y + n.pos.y
+                };
+
             } else {
-                const perv_n = l.getNeuronD(j - 1);
-                const x = perv_n.offset.x + perv_n.r;
-                const y = perv_n.pos.y + perv_n.r * 2 + perv_n.offset.y;
+                const prev_n = l.getNeuronD(j - 1);
+                const x = prev_n.pos.x;
+                const y = prev_n.pos.y + prev_n.r * 2 + prev_n.offset.y;
 
                 n = new NeuronD(l.partialSize, {
                     x,
@@ -73,21 +123,25 @@ function drawNeuralNetwork() {
             l.addNeuronD(n);
         }
 
-        console.log(l);
 
         nn_d.addLayerD(l);
+        console.log(l);
 
     }
 
+    ctx.beginPath();
+    ctx.setLineDash([]);
     for (const l of nn_d.layers_d) {
         l.draw(ctx);
     }
+    ctx.stroke();
+    ctx.save();
 
-    // for (const l of nn_d.layers_d) {
-    //     for (const n of l.neurons) {
-    //         n.draw(ctx);
-    //     }
-    // }
+    for (const l of nn_d.layers_d) {
+        for (const n of l.neurons) {
+            n.draw(ctx);
+        }
+    }
 
 }
 
@@ -178,9 +232,7 @@ class LayerD {
         ctx.moveTo(x, y + fh);
         ctx.lineTo(x + line_x_large, y + fh);
 
-        console.log(x);
-
-        x = x + line_x_large + this._offset.x;
+        x = x + this._partial_size.w - this._offset.x / 2;
 
         ctx.moveTo(x, this._pos.y);
         ctx.lineTo(x + line_x_large, this._pos.y);
@@ -219,6 +271,10 @@ class LayerD {
     }
 
     get partialSize() {
+        return this._partial_size;
+    }
+
+    get partSize() {
         return this._part_size;
     }
 
@@ -226,14 +282,26 @@ class LayerD {
         return this._pos;
     }
 
+    get proportionality() {
+        return this._proportionality;
+    }
+
 
     set neurons(neurons) {
         this._neurons = neurons;
     }
 
+    set offset(offset) {
+        this._offset = offset;
+    }
+
     set pos(pos) {
         this._pos.x = pos.x;
         this._pos.y = pos.y;
+    }
+
+    set proportionality(proportionality) {
+        this._proportionality = proportionality;
     }
 
 }
@@ -304,9 +372,17 @@ class NeuralNetworkD {
         return this._part_size;
     }
 
+    get proportionality() {
+        return this._proportionality;
+    }
+
 
     set layers_d(layers_d) {
         this._layers_d = layers_d;
+    }
+
+    set proportionality(proportionality) {
+        this._proportionality = proportionality;
     }
 
 }
@@ -344,7 +420,7 @@ class NeuronD {
             y: pos.y
         } : {
             x: this._offset.x + this._r,
-            y: this._offset.y
+            y: this._offset.y + this.r
         }; // Position on cartesian plane.
 
         this._style = {

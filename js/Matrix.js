@@ -52,6 +52,10 @@ class Matrix {
         }
     }
 
+    static convertFromArray(arr) {
+        return new Matrix(1, arr.length, [arr]);
+    }
+
     // Multiply two crossed matrices
     static dot (m1, m2) {
         if (m1.cols != m2.rows) {
